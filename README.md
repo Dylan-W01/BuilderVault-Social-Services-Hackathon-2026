@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # BuildersVault Social Services Hackathon — Starter Kit
 
 **Event:** BuildersVault Social Services Hackathon
@@ -159,3 +160,6 @@ No real personally identifiable information appears in any file in this repo. Ev
 - Data or generator bugs: tag the issue `dataset`
 - Questions during the event: ping in the comments on LinkedIn. Let's build in public
 - Event host: Lautaro Cepeda (BuildersVault)
+=======
+# BuilderVault-Social-Services-Hackathon-2026
+>>>>>>> ab0a6a4c3ca4d4797e2f5829e4e6022261c29b9c
