@@ -300,7 +300,7 @@ print('\nPrevious model version.')
 # Baseline: rule-based duplicate detector using Soundex-style bucketing + string similarity
 
 from dateutil import parser as dateparser
-import jellyfish
+# import jellyfish
 # Documentation: https://github.com/life4/textdistance
 import textdistance
 # Converts a last name toa  4-character phonetic code
