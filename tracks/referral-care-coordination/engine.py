@@ -341,6 +341,7 @@ def soundex_sorted(name):
 work = clients[['client_id', 'first_name', 'last_name', 'aliases','dob']].copy()
 work['last_soundex'] = work['last_name'].apply(soundex_sorted)
 pairs = []
+filtered = []
 # Groups clients by similar last name
 for _, bucket in work.groupby('last_soundex'):
 
@@ -383,8 +384,15 @@ for _, bucket in work.groupby('last_soundex'):
             except Exception:
                 dob_match = 0.0
             
+            #Note this only consists of confirmed positives. 
             if score >= 0.56 and first_sim >= 0.5:
                 pairs.append({
+                    'client_id_a': a['client_id'],
+                    'client_id_b': b['client_id'],
+                    'score': round(score, 3),
+                })
+            else:
+                 filtered.append({
                     'client_id_a': a['client_id'],
                     'client_id_b': b['client_id'],
                     'score': round(score, 3),
@@ -520,18 +528,18 @@ queue = []
 for p in pairs:
     a_info = client_lookup.get(p['client_id_a'], {})
     b_info = client_lookup.get(p['client_id_b'], {})
-    a_dob = a_info['dob']
+    a_dob = a_info.get('dob', '')
     try:
-        if pd.notna(a['dob']):
+        if pd.notna(a_info.get('dob')):
             a_dob = str(dateparser.parse(a_info['dob'], dayfirst=True).date())
     
     except (Exception):
         a_dob = "N/A"
     
     
-    b_dob = b_info['dob']
+    b_dob = a_info.get('dob', '')
     try:
-        if pd.notna(b['dob']):
+        if pd.notna(b_info.get('dob')):
             b_dob = str(dateparser.parse(b_info['dob'], dayfirst=True).date())
     except (Exception):
         b_dob = "N/A"
@@ -556,6 +564,8 @@ for p in pairs:
         'score': p['score'],
     })
 
+
+
 # Sort highest confidence first
 queue.sort(key=lambda x: x['score'], reverse=True)
 
@@ -563,3 +573,55 @@ with open('queue.json', 'w') as f:
     json.dump(queue, f, indent=2)
 
 print(f'Wrote {len(queue)} pairs to queue.json')
+
+queue2 = []
+for p in filtered:
+    c_info = client_lookup.get(p['client_id_a'], {})
+    d_info = client_lookup.get(p['client_id_b'], {})
+    
+    c_dob = ''
+    try:
+        raw = c_info.get('dob')
+        if raw and pd.notna(raw):
+            c_dob = str(dateparser.parse(str(raw), dayfirst=True).date())
+    except Exception:
+        c_dob = 'N/A'
+
+    d_dob = ''
+    try:
+        raw = d_info.get('dob')
+        if raw and pd.notna(raw):
+            d_dob = str(dateparser.parse(str(raw), dayfirst=True).date())
+    except Exception:
+        d_dob = 'N/A'
+
+    queue2.append({
+        'client_id_a': p['client_id_a'],
+        
+        'name_a': f"{c_info.get('first_name', '')} {c_info.get('last_name', '')}".strip(),
+        'dob_a': c_dob,
+        'ocap_protected_a': str(c_info.get('ocap_protected', '')),
+        'current_consent_id_a': str(c_info.get('current_consent_id', '')),
+        'indigenous_identity_a': str(c_info.get('indigenous_identity', '')),
+        'acuity_level_a': str(c_info.get('assessment_acuity_level', '')),
+
+        'client_id_b': p['client_id_b'],
+        'name_b': f"{d_info.get('first_name', '')} {d_info.get('last_name', '')}".strip(),
+        'dob_b': d_dob,
+        'ocap_protected_b': str(d_info.get('ocap_protected', '')),
+        'current_consent_id_b': str(d_info.get('current_consent_id', '')),
+        'indigenous_identity_b': str(d_info.get('indigenous_identity', '')),
+        'acuity_level_b': str(d_info.get('assessment_acuity_level', '')),
+
+        'score': p['score'],
+    })
+
+# Sort highest confidence first
+
+
+queue2.sort(key=lambda x: x['score'], reverse=True)
+
+with open('unsorted.json', 'w') as f:
+    json.dump(queue2, f, indent=2)
+
+print(f'Wrote {len(queue2)} pairs to queue.json')

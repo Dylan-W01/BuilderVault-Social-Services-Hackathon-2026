@@ -1472,10 +1472,12 @@
   </div>
 
   <h2 class="section-head">
-    <span>Review Queue</span>
-    <span class="counter">3 items · sorted by confidence</span>
-  </h2>
-
+  <span>Review Queue</span>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <span class="counter">sorted by confidence</span>
+    <button class="btn btn-ghost" style="font-size:10px; padding:5px 10px;" onclick="downloadManualQueue()">Download unmatched queue JSON</button>
+  </div>
+</h2>
   <!-- CARD 1 : Happy Path -->
    
   <div id="queue-cards"></div>
@@ -2562,6 +2564,21 @@ function renderQueue() {
 
 loadQueue();
 
+
+function downloadManualQueue() {
+  fetch('./unsorted.json')
+    .then(r => r.json())
+    .then(data => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'manual_review_queue.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    })
+    .catch(() => showToast('Could not load unsorted.json — is the server running?'));
+}
 
 
 </script>
