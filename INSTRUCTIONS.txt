@@ -1,0 +1,11 @@
+Step 0:
+Do this on your command line:
+pip install python-dateutil
+pip install textdistance
+(be careful about spelling with dateutil when installing)
+Step 1: open a command prompt and go to the root project folder. Type cd tracks/referral-care-condition
+run python engine first by typing "python engine.py"
+Step 2: start local server
+python -m http.server 8000
+3. Go to: http://localhost:8000/mockUI-SocialServiceHackathon.html
+a. If the json file is having trouble loading, restart your computer.
