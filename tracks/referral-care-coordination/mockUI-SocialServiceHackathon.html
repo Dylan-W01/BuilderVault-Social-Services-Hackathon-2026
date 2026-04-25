@@ -1477,7 +1477,9 @@
   </h2>
 
   <!-- CARD 1 : Happy Path -->
-  <article class="review-card" id="card-1">
+   
+  <div id="queue-cards"></div>
+  <!-- <article class="review-card" id="card-1">
     <header class="card-header">
       <div class="confidence"><span class="value">0.91</span><span class="label">Match Confidence</span></div>
       <div style="display:flex; align-items:center; gap:16px;">
@@ -1544,7 +1546,7 @@
       <div class="spacer"></div>
       <span class="audit">Decision will be logged · reviewer: M. Delacroix</span>
     </footer>
-  </article>
+  </article> -->
 
   <!-- CARD 2 : OCAP-blocked -->
   <article class="review-card review-card-blocked" id="card-2">
@@ -2013,6 +2015,35 @@ function showToast(msg) {
 // ════════════════════════════════════
 function openMergeModal(source) {
   state.currentMergeSource = source;
+
+  // Find which pair this card corresponds to
+  const cardIndex = parseInt(source.replace('dyn-card-', ''));
+  const pair = QUEUE[cardIndex];
+
+  if (pair) {
+    // Split names into first/last
+    const [aFirst, ...aLastParts] = pair.name_a.split(' ');
+    const [bFirst, ...bLastParts] = pair.name_b.split(' ');
+    const aLast = aLastParts.join(' ');
+    const bLast = bLastParts.join(' ');
+
+    // Pre-fill modal fields from the pair data
+    document.getElementById('m-first').value = aFirst || '';
+    document.getElementById('m-last').value = aLast || '';
+    document.getElementById('m-dob').value = pair.dob_a || pair.dob_b || '';
+    document.getElementById('m-phone').value = '';
+    document.getElementById('m-aliases').value = '';
+    document.getElementById('m-org').value = '';
+    document.getElementById('m-notes').value = '';
+
+    // Update the modal intro text
+    document.querySelector('.modal-intro').innerHTML =
+      `You're about to merge <strong>${pair.client_id_a}</strong> (${pair.name_a}) and 
+       <strong>${pair.client_id_b}</strong> (${pair.name_b}) into a single consolidated record. 
+       The fields below are pre-filled — edit anything before committing. Once committed, 
+       this row is written to <code>resolved_clients.csv</code> and linked in the audit ledger.`;
+  }
+
   document.getElementById('merge-modal').classList.add('show');
 }
 function closeMergeModal() {
@@ -2022,7 +2053,7 @@ function closeMergeModal() {
 function commitMerge() {
   const row = {
     action: 'confirmed',
-    ref: 'DUP-00412',
+    ref: state.currentMergeSource || 'DUP-dyn',
     timestamp: new Date().toISOString().replace('T',' ').substring(0,16),
     rows: [{
       golden_id: 'GC-' + String(1000 + state.resolved.length).padStart(4,'0'),
@@ -2032,23 +2063,24 @@ function commitMerge() {
       phone: document.getElementById('m-phone').value,
       aliases: document.getElementById('m-aliases').value,
       primary_org: document.getElementById('m-org').value,
-      source_ids: 'CL-00010234 (Our Place); CL-00024991 (Cool Aid)',
+      source_ids: '',
       decision: 'confirmed_match',
       reviewer: 'maria.delacroix@ourplace.ca',
       notes: document.getElementById('m-notes').value
     }]
   };
   state.resolved.push(row);
-  // mark original card
-  const card = document.getElementById('card-1');
+  // Mark the dynamic card as resolved
+  const card = document.getElementById(state.currentMergeSource);
   if (card) {
     card.classList.add('resolved');
     card.style.pointerEvents = 'none';
+    card.style.opacity = '0.5';
   }
   renderResolvedList();
   updateBadge();
   closeMergeModal();
-  addAuditRow('confirmed', 'DUP-00412', 'Match confirmed', 'M. Delacroix', 'Our Place ↔ Cool Aid', 'Cluster · DSA-008');
+  addAuditRow('confirmed', row.ref, 'Match confirmed', 'M. Delacroix', 'Client A ↔ Client B', 'Cluster · DSA-008');
   showToast('Committed. One consolidated row written to resolved_clients.csv.');
 }
 
@@ -2432,6 +2464,106 @@ document.getElementById('merge-modal').addEventListener('click', (e) => {
 // Init
 updateBadge();
 renderResolvedList();
+
+// Engine Queue Data
+
+let QUEUE = [
+  
+  
+];
+async function loadQueue() {
+  try {
+    const response = await fetch('./queue.json');
+    if (!response.ok) throw new Error('Failed to load queue.json');
+    QUEUE = await response.json();
+    renderQueue();
+  } catch (error) {
+    console.error('Error loading queue:', error);
+    document.getElementById('queue-cards').innerHTML = 
+      '<p style="color:var(--rust); font-family:var(--font-mono); font-size:12px;">Error loading queue.json — is the server running?</p>';
+  }
+}
+
+function renderQueue() {
+  const container = document.getElementById('queue-cards');
+  if (!QUEUE.length) {
+    container.innerHTML = '<p style="color:var(--ink-mute); font-style:italic;">No pairs to review.</p>';
+    return;
+  }
+  container.innerHTML = QUEUE.map((pair, i) => {
+    const cardId = 'dyn-card-' + i;
+    const dupId = 'DUP-' + String(500 + i).padStart(5, '0');
+    const ocapBlocked = pair.ocap_protected_a === 'True' || pair.ocap_protected_b === 'True';
+
+    return `
+    <article class="review-card ${ocapBlocked ? 'review-card-blocked' : ''}" id="${cardId}">
+      <header class="card-header">
+        <div class="confidence">
+          <span class="value">${pair.score.toFixed(2)}</span>
+          <span class="label">Match Confidence</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <span class="card-id">${dupId}</span>
+          <span class="status-pill ${ocapBlocked ? 'status-blocked' : 'status-open'}">
+            ${ocapBlocked ? 'Held · OCAP consultation' : 'Ready for review'}
+          </span>
+        </div>
+      </header>
+
+      <div class="compare">
+        <div class="record">
+          <div class="org-tag">Client A</div>
+          <div class="client-name">${pair.name_a}</div>
+          <div class="client-id">${pair.client_id_a}</div>
+          <dl class="details">
+            <dt>Born</dt><dd>${pair.dob_a || '—'}</dd>
+            <dt>OCAP</dt><dd>${pair.ocap_protected_a === 'True' ? 'Protected' : 'Not protected'}</dd>
+            <dt>Indigenous ID</dt><dd>${pair.indigenous_identity_a || '—'}</dd>
+            <dt>Acuity</dt><dd>${pair.acuity_level_a || '—'}</dd>
+            <dt>Consent ID</dt><dd style="font-family:var(--font-mono); font-size:11px;">${pair.current_consent_id_a || '—'}</dd>
+          </dl>
+        </div>
+
+        <div class="match-arrow">
+          <svg width="20" height="24" viewBox="0 0 20 24" fill="none">
+            <path d="M4 6 L10 12 L4 18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <path d="M16 6 L10 12 L16 18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div class="record">
+          <div class="org-tag">Client B</div>
+          <div class="client-name">${pair.name_b}</div>
+          <div class="client-id">${pair.client_id_b}</div>
+          <dl class="details">
+            <dt>Born</dt><dd>${pair.dob_b || '—'}</dd>
+            <dt>OCAP</dt><dd>${pair.ocap_protected_b === 'True' ? 'Protected' : 'Not protected'}</dd>
+            <dt>Indigenous ID</dt><dd>${pair.indigenous_identity_b || '—'}</dd>
+            <dt>Acuity</dt><dd>${pair.acuity_level_b || '—'}</dd>
+            <dt>Consent ID</dt><dd style="font-family:var(--font-mono); font-size:11px;">${pair.current_consent_id_b || '—'}</dd>
+          </dl>
+        </div>
+      </div>
+
+      <footer class="card-footer">
+        ${ocapBlocked 
+          ? `<button class="btn btn-primary" style="background:var(--stone); border-color:var(--stone);" 
+               onclick="showToast('Request initiated. Routed to Indigenous Liaison.')">Begin Nation consultation</button>
+             <button class="btn btn-ghost" onclick="showToast('Deferred. This item will return in 7 days.')">Defer · revisit later</button>`
+          : `<button class="btn btn-primary" onclick="openMergeModal('${cardId}')">Confirm match</button>
+             <button class="btn btn-reject" onclick="rejectMatch('${cardId}')">Not a match · keep separate</button>`
+        }
+        <div class="spacer"></div>
+        <span class="audit">Score: ${Math.round(pair.score * 100)}% · ${dupId}</span>
+      </footer>
+    </article>`;
+  }).join('');
+}
+
+loadQueue();
+
+
+
 </script>
 
 </body>
