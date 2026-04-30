@@ -1,0 +1,14 @@
+Team Name: Liaison
+
+
+Muhammad Aarij - Strategy, product, field research, design
+LinkedIn Profile: https://www.linkedin.com/in/muhammadaarij/
+
+Dylan Whitbread - Engineering, entity-resolution model, OCAP and consent enforcement
+LinkedIn Profile: https://www.linkedin.com/in/dylan-whitbread-625147269/
+
+Project link:
+GitHub repository: https://github.com/Dylan-W01/BuilderVault-Social-Services-Hackathon-2026.git
+
+Hackathon: BuildersVault AI Social Services Hackathon — UVic — April 2026
+Track: Inter-Org Referral and Care Coordination
