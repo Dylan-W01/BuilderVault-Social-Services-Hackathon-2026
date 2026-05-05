@@ -295,15 +295,18 @@ print(f'  recall:    {recall:.3f}')
 print(f'  f1:        {f1:.3f}')
 print('\nPrevious model version.')
 
-######### Modified code by Dylan
+######### Modified code by Dylan Whitbread
 
-# Baseline: rule-based duplicate detector using Soundex-style bucketing + string similarity
+# Description: uses a rules-based approach to sort similar last names into buckets using soundex,
+# compares different phonetics and spellings of first names using editex (accounts for potential typos), and compares different date of birth formats using dateutil.
+# After the code runs, two .json files will be returned: 'queue.json' and 'unsorted.json' (located later in the file, use ctrl+F with VS Code and type these in the search to find them).
 
+
+# Dateutil documentation: https://dateutil.readthedocs.io/en/stable/ 
 from dateutil import parser as dateparser
-# import jellyfish
-# Documentation: https://github.com/life4/textdistance
+# Testdistance library: https://pypi.org/project/textdistance/ 
 import textdistance
-# Converts a last name toa  4-character phonetic code
+# Converts a last name to a 4-character phonetic code
 
 def soundex(name):
     if not isinstance(name, str) or not name:
@@ -384,7 +387,7 @@ for _, bucket in work.groupby('last_soundex'):
             except Exception:
                 dob_match = 0.0
             
-            #Note this only consists of confirmed positives. 
+            # Adds identified and misidentified cases to json files, to never skip over any matching pairs. 
             if score >= 0.56 and first_sim >= 0.5:
                 pairs.append({
                     'client_id_a': a['client_id'],

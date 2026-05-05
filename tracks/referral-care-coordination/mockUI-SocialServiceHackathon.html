@@ -2482,7 +2482,7 @@ async function loadQueue() {
   } catch (error) {
     console.error('Error loading queue:', error);
     document.getElementById('queue-cards').innerHTML = 
-      '<p style="color:var(--rust); font-family:var(--font-mono); font-size:12px;">Error loading queue.json — is the server running?</p>';
+     `<p style="color:var(--rust); font-family:var(--font-mono); font-size:12px;">Error loading queue.json: ${error.message}</p>`;
   }
 }
 

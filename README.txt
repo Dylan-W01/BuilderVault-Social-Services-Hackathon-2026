@@ -19,5 +19,5 @@ python engine.py
 Step 2: start local server
 python -m http.server 8000
 3. Go to: http://localhost:8000/mockUI-SocialServiceHackathon.html
-a. Copy and paste this link in the browser. If that doesn't work, ensure you followed all steps (including installations, generating data, moving to correct directory, running engine). If it still doesn't work, try to double-click on .\tracks\referral-care-coordination\mockUI-SocialServiceHackathon.html
+a. Copy and paste this link in the browser. If that doesn't work, ensure you followed all steps (including installations, generating data, moving to correct directory, running engine). Also try typing http://localhost:8000 into the browser and click on the .html file from there. If it still doesn't work, try to double-click on .\tracks\referral-care-coordination\mockUI-SocialServiceHackathon.html
 b. If the json file is having trouble loading, restart your computer. and repeat step 2.
