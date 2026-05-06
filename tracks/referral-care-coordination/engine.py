@@ -627,4 +627,4 @@ queue2.sort(key=lambda x: x['score'], reverse=True)
 with open('unsorted.json', 'w') as f:
     json.dump(queue2, f, indent=2)
 
-print(f'Wrote {len(queue2)} pairs to queue.json')
+print(f'Wrote {len(queue2)} pairs to unsorted.json')
